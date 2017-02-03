@@ -28,7 +28,7 @@ Select *
 -- 8. List all data for orders in February of US $600 or more.
 Select *
 	from Orders
-    where month = 'Feb' OR month = 'May';
+    where month = 'Feb' AND totalUSD >= 600;
 -- 9. List all orders from the customer whose cid is C005.
 Select *
 	from Orders
