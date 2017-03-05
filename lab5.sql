@@ -22,9 +22,9 @@ order by orders.pid desc;
 Select name
  From customers
 Where customers.cid Not in (
-    						Select cid 
-    						from orders
-							);
+    			   Select cid 
+    			   from orders
+  			    );
 
 -- 4. Show the names of customers who have never placed an order. Use an outer join. 
 Select customers.name
@@ -47,7 +47,7 @@ Select distinct customers.name, agents.name
 select customers.name, agents.name, customers.city
  from customers
   Inner Join Agents
-   on customers.city = Agents.city
+   on customers.city = Agents.city;
 
 -- 7. Show the name and city of customers who live in the city that makes the fewest different kinds of products. 
 -- (Hint: Use count and group by on the Products table.)
@@ -64,9 +64,5 @@ select distinct customers.city, customers.name
                            order by count(Products.city) asc
                              ) As L_H
                              Limit 1
-                             )
+                             );
 -- THIS ONE WAS REALLY HARD
-     
- 
- 
- 
