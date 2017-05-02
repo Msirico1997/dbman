@@ -20,7 +20,7 @@ Create Table If Not Exists "Class" (
   "jump_base" Int Not Null,
   "throw_base" Int
 );
-
+Select * from "Class";
 
 
 create table if not exists "SubClass" (
@@ -36,6 +36,7 @@ create table if not exists "SubClass" (
   "HP_base" Int Not Null,
   "SP_base" Int Not Null
 ); 
+Select * from "SubClass";
 
 
 create table if not exists "Weapon_Mastery" (
@@ -48,6 +49,7 @@ create table if not exists "Weapon_Mastery" (
   "Axe_Mastery" Text,
   "Staff_Mastery" Text
 );
+Select * from "Weapon_Mastery";
 
 
 create table if not exists "Stats_Aptitude" (
@@ -61,6 +63,7 @@ create table if not exists "Stats_Aptitude" (
   "hit_apt" Int Not Null,
   "spd_apt" Int Not Null
 );
+select * from "Stats_Aptitude";
 
 
 create table if not exists "Skills" (
@@ -71,12 +74,14 @@ create table if not exists "Skills" (
   "Effect" Text Not Null,
   "Height" Int Not Null
 );
+Select * from "Skills";
 
 
 create table if not exists "Skill_Relations" (
   "Class_ID" Int references "Class"("Class_ID"),
   "Skill_ID" Int references "Skills"("Skill_ID")
 );
+Select * from "Skill_Relations";
 
 create table if not exists "Character" (
   "Char_ID" Serial primary key,
@@ -87,11 +92,13 @@ create table if not exists "Character" (
   "Felony_count" Int,
   "exp" Int
 );
+Select * from "Character";
 
 create table if not exists "Char_Skills" (
   "Char_ID" Int references "Character"("Char_ID"),
   "Skill_ID" Int references "Skills"("Skill_ID")
 );
+Select * from "Char_Skills";
 
 create table if not exists "Specialist" (
   "Spec_ID" Int references "Character"("Char_ID") primary key,
@@ -99,6 +106,7 @@ create table if not exists "Specialist" (
   "Effect_cap" Int,
   "Is_Subdued" Bool
 );
+Select * from "Specialist";
 
 create table if not exists "Item_Type" (
   "Itemtype_ID" Serial primary key,
@@ -118,7 +126,7 @@ create table if not exists "Item_Type" (
   "Equippable" Bool Not Null,
   "EquipType" Text
 );
-
+Select * from "Item_Type";
 
 create table if not exists "Item_Real" (
   "Itemtype_ID" Int references "Item_Type"("Itemtype_ID"),
@@ -129,37 +137,10 @@ create table if not exists "Item_Real" (
   "IsInInventory" Bool,
   Constraint Resident_Equip check ("Resident"<>"Equipped")
 );
+Select * from "Item_Real";
 
-
-
---This view  will return all Characters, along with their subclass name, and that subclass' Weapon Mastery
-
-Create view CharacterClassMastery As
-Select "Character"."Name", "SubClass"."SubClass_name", "Weapon_Mastery".*
-from "Character"
-Left outer join "SubClass" On
-"Character"."SubClass_ID" = "SubClass"."SubClass_ID"
-inner join "Weapon_Mastery" on
-"SubClass"."SubClass_ID" = "Weapon_Mastery"."SubClass_ID";
-
-select * from CharacterClassMastery;
-
-
---This view will return the name, rarity, and price of all Items in your inventory that are not 
--- equipped to any character And that have no residents, ordering them by Base_Price
-Create view emptyItems As
-Select "Item_Type"."Itemtype_name", "Item_Real"."Rarity", "Item_Type"."Base_Price"
-from "Item_Type", "Item_Real"
-where "Item_Real"."Resident" is null 
-AND "Item_Real"."Equipped" is null
-AND "Item_Real"."IsInInventory" = true
-AND "Item_Real"."Itemtype_ID" = "Item_Type"."Itemtype_ID"
-ORDER BY "Item_Type"."Base_Price" Asc;
-drop view emptyItems;
-
-Select * from emptyItems
-select * from characterclassmastery
-
+-- End Of Table Creation
+-- Beginning of Insert Statements
 
 Insert Into "Class"("Class_name", "move_base", "jump_base", "counter_base", "throw_base")
 Values
@@ -497,25 +478,79 @@ Values
 (3, 8, Null, 7, True),
 (23, Null, Null, 1, False),
 (5, 6, Null, 13, True),
-(1, Null, Null, 0, True),
+(1, Null, 9, 0, True),
 (11, Null, Null, 44, False),
 (12, 8, Null, 1, True),
 (13, 7, Null, 2, True),
 (4, 7, Null, 4, True),
 (4, 6, Null, 5, True),
-(5, 4, Null, 7, True),
-(5, 2, Null, 2, True),
+(5, 4, 6, 7, True),
+(5, 2, 6, 2, True),
 (6, 3, Null, 17, True),
 (15, Null, Null, 22, True),
 (16, Null, Null, 24, True),
 (17, Null, Null, 22, True),
 (18, 5, Null, 11, True),
 (19, 9, Null, 12, False),
-(20, Null, Null, 0, False);
+(20, Null, Null, 0, False),
+(17, 1, Null, 33, True);
+
+select * from "Item_Real";
+
+-- Most of The above data and stats have been sourced from
+-- http://disgaea.wikia.com
+
+-- Beginning of View Statements
+
+--This view  will return all Characters, along with their subclass name, and that subclass' Weapon Mastery
+Drop view if exists "Character_Classes";
+Create view "Character_Classes" As
+Select "Character"."Name", "Class"."Class_name", "SubClass"."SubClass_name"
+from "Character"
+Left outer join "SubClass" On
+"Character"."SubClass_ID" = "SubClass"."SubClass_ID"
+inner join "Class" on
+"SubClass"."Class_ID" = "Class"."Class_ID";
+
+select * from "Character_Classes";
+
+-- This view will return all Characters with equipped Items That are not armor,
+-- and their mastery for weapons of those types, along with their Full Class (Not SubClass)
+Drop View if exists "Equipped_Mastery_Class";
+Create View "Equipped_Mastery_Class" As
+Select "Character"."Name", "Class"."Class_name", "Item_Type"."Itemtype_name", "Item_Type"."EquipType", "Weapon_Mastery".*
+From "Item_Real"
+inner Join "Item_Type"
+On "Item_Real"."Itemtype_ID" = "Item_Type"."Itemtype_ID"
+inner Join "Character"
+On "Item_Real"."Equipped" = "Character"."Char_ID"
+Inner Join "Weapon_Mastery"
+On "Character"."SubClass_ID" = "Weapon_Mastery"."SubClass_ID"
+Inner Join "SubClass"
+on "Character"."SubClass_ID" = "SubClass"."SubClass_ID"
+Inner Join "Class"
+on "SubClass"."Class_ID" = "Class"."Class_ID"
+Where ("Item_Type"."Equippable" <> false)
+And ("Item_Real"."Equipped" is not null)
+And ("Item_Type"."EquipType" <> 'Armor')
+Order By "Item_Type"."EquipType" ASC;
+
+select  * from "Equipped_Mastery_Class";
 
 
+--This view will return the name, rarity, and price of all Items in your inventory that are not 
+-- equipped to any character And that have no residents, ordering them by Base_Price
+Drop view if exists "emptyItems";
+Create view "emptyItems" As
+Select "Item_Type"."Itemtype_name", "Item_Type"."EquipType", "Item_Real"."Rarity", "Item_Type"."Base_Price"
+from "Item_Type", "Item_Real"
+where "Item_Real"."Resident" is null 
+AND "Item_Real"."Equipped" is null
+AND "Item_Real"."IsInInventory" = true
+AND "Item_Real"."Itemtype_ID" = "Item_Type"."Itemtype_ID"
+ORDER BY "Item_Type"."Base_Price" Asc;
 
- 
+Select * from "emptyItems";
 
 
 
