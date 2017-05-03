@@ -510,7 +510,8 @@ from "Character"
 Left outer join "SubClass" On
 "Character"."SubClass_ID" = "SubClass"."SubClass_ID"
 inner join "Class" on
-"SubClass"."Class_ID" = "Class"."Class_ID";
+"SubClass"."Class_ID" = "Class"."Class_ID"
+Order By "Character"."Name" Desc;
 
 select * from "Character_Classes";
 
@@ -552,7 +553,79 @@ ORDER BY "Item_Type"."Base_Price" Asc;
 
 Select * from "emptyItems";
 
+-- End Views
+-- Begin Report
+
+-- This will return The names of characters who do not have a weapon Equipped, 
+Select *
+ from "Character"
+where "Character"."Char_ID" Not in(
+Select "Character"."Char_ID"
+From "Item_Real"
+inner Join "Item_Type"
+On "Item_Real"."Itemtype_ID" = "Item_Type"."Itemtype_ID"
+inner Join "Character"
+On "Item_Real"."Equipped" = "Character"."Char_ID"
+Where ("Item_Type"."Equippable" <> false)
+And ("Item_Real"."Equipped" is not null)
+And ("Item_Type"."EquipType" <> 'Armor')
+Order By "Item_Type"."EquipType" ASC);
 
 
+-- Stored Procedure
+/*
+Create or Replace Function CalculateAtk("Input_Char_ID" Int) Returns INT as $$
+Declare
+atk_base Int :=
+(Select "SubClass"."atk_base"
+from "Character"
+inner join "SubClass"
+on "Character"."SubClass_ID" = "SubClass"."SubClass_ID"
+Where "Character"."Char_ID" = "Input_Char_ID");
+equip_mod Int :=
+(Select "Item_Type"."atk_mod"
+from "Character"
+Inner Join "Item_Real"
+on "Item_Real"."Equipped" = "Input_Char_ID"
+Inner Join "Item_Type"
+on "Item_Real"."Itemtype_ID" = "Item_Type"."Itemtype_ID");
+where 
+Begin
+return equip_mod + atk_base;
+end;
+$$ Language plpgsql;
 
+Select CalculateAtk(3);
 
+Create or Replace Function LevelUp("Input_Char_ID" Int) AS $$
+Declare
+level := (Select "Character"."Level"
+from "Character");
+exp := (Select "Character"."Level"
+from "Character");
+Begin
+if exp >= 100
+then Level = Level + 1
+Update "Character"."Level"
+where "Character"."Char_ID" = "Input_Char_ID";
+
+--Trigger
+
+Create Trigger expLevel
+After Insert Or Update on "Character"."exp"
+For "Character"."exp"
+Execute Procedure Levelup('Char_ID");
+*/
+
+Create Role Admin;
+Grant All on All Tables
+In Schema Public
+To Admin;
+
+Create Role Player;
+Grant Select, Insert, Update On "Character", "Specialist", "Char_Skills"
+to Player;
+Grant Select, Update On "Item_Real"
+to Player;
+Grant Select On "Class", "SubClass", "Weapon_Mastery", "Stats_Aptitude", "Skills", "Skill_Relations", "Item_Type"
+To Player;
